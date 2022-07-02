@@ -28,6 +28,8 @@ import android.widget.*
 import androidx.annotation.RequiresApi
 
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.gpu.CompatibilityList
+import org.tensorflow.lite.gpu.GpuDelegate
 import org.w3c.dom.Text
 
 
@@ -39,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var button: Button
     private lateinit var textView: TextView
     private lateinit var textView2: TextView
+    private lateinit var textView3: TextView
+
+    private lateinit var interpreter: Interpreter
 
     private var predictTimeStart = 0L
     private var predictTimeStop = 0L
@@ -99,10 +104,11 @@ class MainActivity : AppCompatActivity() {
 
         var mat1 = Mat()
         var mat2 = Mat()
-        var mat3 = Mat()
+//        var mat3 = Mat()
+        val ppTimeStart = SystemClock.uptimeMillis()
         bitmapToMat(bitmapInput, mat1)
-        processImage(mat1.nativeObjAddr, mat3.nativeObjAddr)
-        Imgproc.resize(mat3, mat2, Size(128.0, 128.0))
+//        processImage(mat1.nativeObjAddr, mat3.nativeObjAddr)
+        Imgproc.resize(mat1, mat2, Size(128.0, 128.0))
         var bitmap = Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888)
         matToBitmap(mat2, bitmap)
 
@@ -127,10 +133,14 @@ class MainActivity : AppCompatActivity() {
 
         val bufferSize = 128 * 128 * java.lang.Float.SIZE / java.lang.Byte.SIZE
         val modelOutput = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder())
-        val options = Interpreter.Options()
-        val tmpFile = loadModelFile("model_128_16_metadata.tflite")
-        val interpreter: Interpreter = Interpreter(tmpFile, options)
+        val ppTimeStop = SystemClock.uptimeMillis()
+        val ppTimeDiff = ppTimeStop - ppTimeStart
+        Handler(mainLooper).post({
+            textView2.setText("PP Time: $ppTimeDiff")
+        })
+        // Attempting to use a delegate that only supports static-sized tensors with a graph that has dynamic-sized tensors.
         interpreter?.run(input, modelOutput)
+        val popTimeStart = SystemClock.uptimeMillis()
 
         var floatArrayOutput = FloatArray(128*128)
 
@@ -162,6 +172,11 @@ class MainActivity : AppCompatActivity() {
         parsedBitmapResult.copyPixelsFromBuffer(byteBufferParsedResult)
         var parsedBitmapResultResized = Bitmap.createScaledBitmap(parsedBitmapResult, 640, 480, true)
         var bitmapInputResized = Bitmap.createScaledBitmap(bitmapInput, 640, 480, true)
+        val popTimeStop = SystemClock.uptimeMillis()
+        val popTimeDiff = popTimeStop - popTimeStart
+        Handler(mainLooper).post({
+            textView3.setText("POP Time: $popTimeDiff")
+        })
 
 
         Handler(mainLooper).post({
@@ -178,6 +193,7 @@ class MainActivity : AppCompatActivity() {
         videoView = findViewById(R.id.videoView)
         textView = findViewById(R.id.textView)
         textView2 = findViewById(R.id.textView2)
+        textView3 = findViewById(R.id.textView3)
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
@@ -185,6 +201,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+//        val delegate = GpuDelegate(GpuDelegate.Options().setQuantizedModelsAllowed(true)) // DEQUANTIZE not supported
+//        val delegate = GpuDelegate(GpuDelegate.Options().setQuantizedModelsAllowed(false)) // TRANSPOSE_CONV: Max version supported: 2. Requested version 3.
+//        val options = Interpreter.Options().addDelegate(delegate)
+//        val options = Interpreter.Options().setUseNNAPI(true) // 1200
+        val options = Interpreter.Options().setNumThreads(4) //500
+//        val options = Interpreter.Options().setUseNNAPI(true).setNumThreads(4) // 1100
+
+//        val options = Interpreter.Options()
+
+        val tmpFile = loadModelFile("model_128_16_1_metadata.tflite") //okay
+//        val tmpFile = loadModelFile("model_128_dr_1_metadata.tflite") // NOT Okay: Internal error: Cannot create interpreter: Didn't find op for builtin opcode 'CONV_2D' version '5'
+        interpreter = Interpreter(tmpFile, options)
 
         findView()
 
@@ -198,7 +227,7 @@ class MainActivity : AppCompatActivity() {
                     predictTimeStop = SystemClock.uptimeMillis()
                     timeDiff = predictTimeStop - predictTimeStart
                     Handler(mainLooper).post({
-                        textView2.setText("Time: $timeDiff")
+                        textView.setText("Time: $timeDiff")
                     })
                 }
             }
