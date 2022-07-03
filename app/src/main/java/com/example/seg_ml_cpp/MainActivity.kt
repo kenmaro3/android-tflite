@@ -203,11 +203,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 //        val delegate = GpuDelegate(GpuDelegate.Options().setQuantizedModelsAllowed(true)) // DEQUANTIZE not supported
-//        val delegate = GpuDelegate(GpuDelegate.Options().setQuantizedModelsAllowed(false)) // TRANSPOSE_CONV: Max version supported: 2. Requested version 3.
-//        val options = Interpreter.Options().addDelegate(delegate)
+        val delegate = GpuDelegate(GpuDelegate.Options().setQuantizedModelsAllowed(false)) // TRANSPOSE_CONV: Max version supported: 2. Requested version 3.
+        val options = Interpreter.Options().addDelegate(delegate).setNumThreads(4)
 //        val options = Interpreter.Options().setUseNNAPI(true) // 1200
-        val options = Interpreter.Options().setNumThreads(4) //500
-//        val options = Interpreter.Options().setUseNNAPI(true).setNumThreads(4) // 1100
+//        val options = Interpreter.Options().setNumThreads(4) //500
+//        val options = Interpreter.Options().setUseNNAPI(true).setNumThreads(4) // 500
 
 //        val options = Interpreter.Options()
 
