@@ -211,8 +211,9 @@ class MainActivity : AppCompatActivity() {
 
 //        val options = Interpreter.Options()
 
-        val tmpFile = loadModelFile("model_128_16_1_metadata.tflite") //okay
-//        val tmpFile = loadModelFile("model_128_dr_1_metadata.tflite") // NOT Okay: Internal error: Cannot create interpreter: Didn't find op for builtin opcode 'CONV_2D' version '5'
+        //val tmpFile = loadModelFile("model_128_16_1_metadata.tflite") //okay
+        val tmpFile = loadModelFile("model_128_mobile_thin_metadata.tflite") //okay
+//        val tmpFile = loadModelFile("model_128_dr_1_metadata.tflite") // 250, but not parsed good
         interpreter = Interpreter(tmpFile, options)
 
         findView()
