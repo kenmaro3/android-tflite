@@ -14,6 +14,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Seg_ml_cpp">
+        <uses-native-library
+            android:name="libOpenCL-pixel.so"
+            android:required="false"/>
         <activity
             android:name=".MainActivity"
             android:exported="true">
